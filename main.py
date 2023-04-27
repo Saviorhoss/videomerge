@@ -1,8 +1,3 @@
-# (c) @AbirHasan2005
-# This is very simple Telegram Videos Merge Bot.
-# Coded by a Nub.
-# Don't Laugh seeing the codes.
-# Me learning.
 
 import os
 import time
@@ -56,9 +51,9 @@ async def start_handler(bot: Client, m: Message):
         quote=True,
         reply_markup=InlineKeyboardMarkup(
             [
-                [InlineKeyboardButton("Developer - @AbirHasan2005", url="https://t.me/AbirHasan2005")],
-                [InlineKeyboardButton("Support Group", url="https://t.me/linux_repo"),
-                 InlineKeyboardButton("Bots Channel", url="https://t.me/Discovery_Updates")],
+                [InlineKeyboardButton("Developer - @Savior_128", url="https://t.me/Savior_128")],
+                [InlineKeyboardButton("Other Bot", url="https://t.me/Siskiuploaderbot"),
+                 InlineKeyboardButton("Bots Channel", url="https://t.me/Siskiuploaderbot")],
                 [InlineKeyboardButton("Open Settings", callback_data="openSettings")],
                 [InlineKeyboardButton("Close", callback_data="closeMeh")]
             ]
@@ -84,8 +79,8 @@ async def videos_handler(bot: Client, m: Message):
     if (FormtDB.get(m.from_user.id, None) is not None) and (media.file_name.rsplit(".", 1)[-1].lower() != FormtDB.get(m.from_user.id)):
         await m.reply_text(f"First you sent a {FormtDB.get(m.from_user.id).upper()} video so now send only that type of video.", quote=True)
         return
-    input_ = f"{Config.DOWN_PATH}/{m.from_user.id}/input.txt"
-    if os.path.exists(input_):
+    dir = f"{Config.DOWN_PATH}/{m.from_user.id}/"
+    if os.path.exists(dir):
         await m.reply_text("Sorry Unkil,\nAlready One in Progress!\nDon't Spam Plox.")
         return
     isInGap, sleepTime = await CheckTimeGap(m.from_user.id)
@@ -200,7 +195,6 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
         duration = 0
         list_message_ids = QueueDB.get(cb.from_user.id, None)
         list_message_ids.sort()
-        input_ = f"{Config.DOWN_PATH}/{cb.from_user.id}/input.txt"
         if list_message_ids is None:
             await cb.answer("Queue Empty!", show_alert=True)
             await cb.message.delete(True)
@@ -235,6 +229,11 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
                         c_time
                     )
                 )
+                if file_dl_path.rsplit('.', 1)[1].lower() != "mp4":
+                    os.system(f"ffmpeg -i {file_dl_path} -c copy {file_dl_path.rsplit('.', 1)[0]}.mp4")
+                    file_dl_path = file_dl_path.rsplit('.', 1)[0] + ".mp4"
+                os.system(f"ffmpeg -i {file_dl_path} -c:v copy -bsf:v h264_mp4toannexb -c:a aac {file_dl_path.rsplit('.', 1)[0]}.ts")
+                file_dl_path = file_dl_path.rsplit('.', 1)[0] + ".ts"
             except Exception as downloadErr:
                 print(f"Failed to Download File!\nError: {downloadErr}")
                 QueueDB.get(cb.from_user.id).remove(i.message_id)
@@ -245,7 +244,7 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
             try:
                 if metadata.has("duration"):
                     duration += metadata.get('duration').seconds
-                vid_list.append(f"file '{file_dl_path}'")
+                vid_list.append(file_dl_path)
             except:
                 await delete_all(root=f"{Config.DOWN_PATH}/{cb.from_user.id}/")
                 QueueDB.update({cb.from_user.id: []})
@@ -256,15 +255,13 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
         for i in range(len(vid_list)):
             if vid_list[i] not in __cache:
                 __cache.append(vid_list[i])
-        vid_list = __cache
-        if (len(vid_list) < 2) and (len(vid_list) > 0):
+        vid_list = "|".join(__cache)
+        if (len(__cache) < 2) and (len(__cache) > 0):
             await cb.message.edit("There only One Video in Queue!\nMaybe you sent same video multiple times.")
             return
         await cb.message.edit("Trying to Merge Videos ...")
-        with open(input_, 'w') as _list:
-            _list.write("\n".join(vid_list))
         merged_vid_path = await MergeVideo(
-            input_file=input_,
+            vid_list=vid_list,
             user_id=cb.from_user.id,
             message=cb.message,
             format_=FormtDB.get(cb.from_user.id, "mkv")
@@ -327,7 +324,7 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
                 user = await bot.get_chat_member(chat_id=(int(Config.UPDATES_CHANNEL) if Config.UPDATES_CHANNEL.startswith("-100") else Config.UPDATES_CHANNEL), user_id=cb.message.chat.id)
                 if user.status == "kicked":
                     await cb.message.edit(
-                        text="Sorry Sir, You are Banned to use me. Contact my [Support Group](https://t.me/linux_repo).",
+                        text="Sorry Sir, You are Banned to use me. Contact my [Other Bot](https://t.me/Siskiuploaderbot).",
                         parse_mode="markdown",
                         disable_web_page_preview=True
                     )
@@ -355,7 +352,7 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
                 return
             except Exception:
                 await cb.message.edit(
-                    text="Something went Wrong. Contact my [Support Group](https://t.me/linux_repo).",
+                    text="Something went Wrong",
                     parse_mode="markdown",
                     disable_web_page_preview=True
                 )
@@ -363,7 +360,7 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
         await cb.message.edit(
             text=Config.START_TEXT,
             parse_mode="Markdown",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Developer - @AbirHasan2005", url="https://t.me/AbirHasan2005"), InlineKeyboardButton("Support Group", url="https://t.me/linux_repo")], [InlineKeyboardButton("Bots Channel", url="https://t.me/Discovery_Updates")]]),
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Developer - @Savior_128", url="https://t.me/Savior_128"), InlineKeyboardButton("Other Bot", url="https://t.me/Siskiuploaderbot")], [InlineKeyboardButton("Bots Channel", url="https://t.me/Siskiuploaderbot")]]),
             disable_web_page_preview=True
         )
     elif "showThumbnail" in cb.data:
@@ -433,7 +430,7 @@ async def callback_handlers(bot: Client, cb: CallbackQuery):
         if (QueueDB.get(cb.from_user.id, None) is None) or (QueueDB.get(cb.from_user.id) == []):
             await cb.answer("Sorry Unkil, Your Queue is Empty!", show_alert=True)
             return
-        merged_vid_path = f"{Config.DOWN_PATH}/{str(cb.from_user.id)}/[@AbirHasan2005]_Merged.{FormtDB.get(cb.from_user.id).lower()}"
+        merged_vid_path = f"{Config.DOWN_PATH}/{str(cb.from_user.id)}/[@Savior_128]_Merged.{FormtDB.get(cb.from_user.id).lower()}"
         if cb.data.split("_", 1)[-1] == "Yes":
             await cb.message.edit("Okay Unkil,\nSend me new file name!")
             try:
